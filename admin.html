@@ -265,13 +265,50 @@
             
             <!-- Gestionar Ejecutivos -->
             <section id="gestionarEjecutivos" class="section">
-                <h2>Gestionar Ejecutivos</h2>
+                <div class="section-header">
+                    <h2>Gestionar Ejecutivos</h2>
+                    <button class="btn-primary" onclick="openEjecutivoForm()">➕ Nuevo Ejecutivo</button>
+                </div>
+                <p class="form-hint">Los teléfonos se usan para notificar al ejecutivo por WhatsApp cuando se agenda una cita. Cada ejecutivo entra al sistema con su propio usuario y contraseña.</p>
                 <div class="executives-list" id="executivesList">
                 </div>
             </section>
         </main>
     </div>
     
+    <!-- Modal para gestionar ejecutivos -->
+    <div id="ejecutivoModal" class="modal">
+        <div class="modal-content modal-sm">
+            <span class="close" onclick="closeEjecutivoModal()">&times;</span>
+            <h2 id="ejecutivoModalTitle">Nuevo Ejecutivo</h2>
+            <form id="ejecutivoForm" class="cita-form">
+                <input type="hidden" id="ejecutivoId">
+                <div class="form-group">
+                    <label for="ejNombre">Nombre Completo *</label>
+                    <input type="text" id="ejNombre" required>
+                </div>
+                <div class="form-group">
+                    <label for="ejTelefono">Teléfono (WhatsApp con +56) *</label>
+                    <input type="tel" id="ejTelefono" placeholder="+56912345678" required>
+                    <small class="form-hint">Formato internacional. Ej: +56912345678</small>
+                </div>
+                <div class="form-group">
+                    <label for="ejUsername">Usuario para entrar al sistema *</label>
+                    <input type="text" id="ejUsername" required>
+                </div>
+                <div class="form-group">
+                    <label for="ejPassword">Contraseña *</label>
+                    <input type="password" id="ejPassword" required>
+                    <small class="form-hint">Al editar, déjela vacía para mantener la contraseña actual.</small>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn-primary">Guardar Ejecutivo</button>
+                    <button type="button" class="btn-secondary" onclick="closeEjecutivoModal()">Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- Modal para ver detalles -->
     <div id="detailModal" class="modal">
         <div class="modal-content">

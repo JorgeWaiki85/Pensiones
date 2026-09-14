@@ -1,26 +1,71 @@
 // ==================== CONFIGURACIÓN DE USUARIOS ====================
-const USERS = {
+const USERS_FIJOS = {
     'admin': { password: 'admin123', role: 'admin', name: 'Administrador del Sistema' },
-    'telefonista': { password: 'tel123', role: 'telefonista', name: 'Telefonista' },
-    'ejecutivo': { password: 'ejec123', role: 'ejecutivo', name: 'Ejecutivo' }
+    'telefonista': { password: 'tel123', role: 'telefonista', name: 'Telefonista' }
 };
 
-const EJECUTIVOS = [
-    'MARÍA PAZ INOSTROZA',
-    'PAULINA INOSTROZA',
-    'CARLOS VALLADARES',
-    'EVELYN VALLADARES',
-    'MAYROBERT BUSTILLO',
-    'DANIELA PÉREZ',
-    'ANDRES ORREGO',
-    'WENDOLIN GONZÁLEZ',
-    'RENATA LAGOS',
-    'PAOLA RAMÍREZ',
-    'JOAN SALFATE',
-    'GHISLAINE CÁCERES',
-    'EMILY DÍAZ',
-    'ARIANY RIOS'
+const EJECUTIVOS_DEFAULT = [
+    { nombre: 'MARÍA PAZ INOSTROZA', telefono: '+56 9 1234 0001' },
+    { nombre: 'PAULINA INOSTROZA', telefono: '+56 9 1234 0002' },
+    { nombre: 'CARLOS VALLADARES', telefono: '+56 9 1234 0003' },
+    { nombre: 'EVELYN VALLADARES', telefono: '+56 9 1234 0004' },
+    { nombre: 'MAYROBERT BUSTILLO', telefono: '+56 9 1234 0005' },
+    { nombre: 'DANIELA PÉREZ', telefono: '+56 9 1234 0006' },
+    { nombre: 'ANDRES ORREGO', telefono: '+56 9 1234 0007' },
+    { nombre: 'WENDOLIN GONZÁLEZ', telefono: '+56 9 1234 0008' },
+    { nombre: 'RENATA LAGOS', telefono: '+56 9 1234 0009' },
+    { nombre: 'PAOLA RAMÍREZ', telefono: '+56 9 1234 0010' },
+    { nombre: 'JOAN SALFATE', telefono: '+56 9 1234 0011' },
+    { nombre: 'GHISLAINE CÁCERES', telefono: '+56 9 1234 0012' },
+    { nombre: 'EMILY DÍAZ', telefono: '+56 9 1234 0013' },
+    { nombre: 'ARIANY RIOS', telefono: '+56 9 1234 0014' }
 ];
+
+function normalizeUsername(nombre) {
+    return nombre.split(' ')[0].toLowerCase()
+        .normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+}
+
+function getStoredEjecutivos() {
+    let stored;
+    try {
+        stored = JSON.parse(localStorage.getItem('pensiones_ejecutivos'));
+    } catch (e) {
+        stored = null;
+    }
+
+    if (!stored || !Array.isArray(stored) || stored.length === 0) {
+        stored = EJECUTIVOS_DEFAULT.map(e => ({
+            nombre: e.nombre,
+            telefono: e.telefono,
+            username: normalizeUsername(e.nombre),
+            password: 'ejec123'
+        }));
+        localStorage.setItem('pensiones_ejecutivos', JSON.stringify(stored));
+    }
+    return stored;
+}
+
+function saveEjecutivos(lista) {
+    localStorage.setItem('pensiones_ejecutivos', JSON.stringify(lista));
+}
+
+function getUsers() {
+    const users = Object.assign({}, USERS_FIJOS);
+    getStoredEjecutivos().forEach(e => {
+        if (e.username) {
+            users[e.username.toLowerCase()] = {
+                password: e.password,
+                role: 'ejecutivo',
+                name: e.nombre,
+                telefono: e.telefono
+            };
+        }
+    });
+    return users;
+}
+
+let EJECUTIVOS = getStoredEjecutivos();
 
 // ==================== VARIABLES GLOBALES ====================
 let citas = [];
@@ -55,6 +100,7 @@ function handleLogin(event) {
     
     const errorMessage = document.getElementById('errorMessage');
     
+    const USERS = getUsers();
     if (USERS[usuario] && USERS[usuario].password === contraseña) {
         const user = USERS[usuario];
         sessionStorage.setItem('pensiones_user', JSON.stringify({
@@ -106,6 +152,12 @@ function checkAuth(requiredRole) {
         const userNameEl = document.getElementById('userName');
         if (userNameEl) {
             userNameEl.textContent = userData.name;
+        }
+
+        // El ejecutivo ve automáticamente sus propias citas
+        if (userData.role === 'ejecutivo' && userData.name) {
+            myAssignedEjecutivo = userData.name;
+            localStorage.setItem('pensiones_ejecutivo', myAssignedEjecutivo);
         }
         
         citas = getStoredCitas();
@@ -174,6 +226,11 @@ function loadDashboard() {
     document.getElementById('totalCitas').textContent = total;
     document.getElementById('citasPendientes').textContent = pendientes;
     document.getElementById('citasCompletadas').textContent = completadas;
+
+    const ejecutivosActivosEl = document.getElementById('ejecutivosActivos');
+    if (ejecutivosActivosEl) {
+        ejecutivosActivosEl.textContent = getStoredEjecutivos().length;
+    }
     
     const actividadEl = document.getElementById('actividadReciente');
     if (citas.length === 0) {
@@ -231,6 +288,22 @@ function guardarCita(event) {
     setCitas(citas);
     
     alert('Cita agendada exitosamente para ' + cita.nombre);
+    
+    // Notificación WhatsApp al ejecutivo asignado
+    const ejecutivoAsignado = EJECUTIVOS.find(e => e.nombre === cita.ejecutivo);
+    if (ejecutivoAsignado && ejecutivoAsignado.telefono) {
+        const url = buildWhatsAppUrl(ejecutivoAsignado.telefono, cita);
+        if (url && confirm(`¿Abrir WhatsApp para notificar a ${ejecutivoAsignado.nombre} sobre esta cita?`)) {
+            window.open(url, '_blank');
+        }
+    } else if (ejecutivoAsignado) {
+        if (confirm(`El ejecutivo ${ejecutivoAsignado.nombre} no tiene teléfono registrado.\n¿Ir a Gestionar Ejecutivos para agregarlo?`)) {
+            if (document.getElementById('gestionarEjecutivos')) {
+                showSection('gestionarEjecutivos');
+                loadExecutivesList();
+            }
+        }
+    }
     
     form.reset();
     
@@ -751,27 +824,224 @@ function loadExecutivesList() {
     citas = getStoredCitas();
     const container = document.getElementById('executivesList');
     if (!container) return;
-    
-    let html = '<table class="data-table"><thead><tr><th>Ejecutivo(a)</th><th>Citas Asignadas</th><th>Reuniones Realizadas</th><th>Procesos Cerrados</th></tr></thead><tbody>';
-    
-    EJECUTIVOS.forEach(nombre => {
-        const ejCitas = citas.filter(c => c.ejecutivo === nombre);
-        const total = ejCitas.length;
-        const reuniones = ejCitas.filter(c => c.reunion === 'si').length;
+
+    EJECUTIVOS = getStoredEjecutivos();
+
+    if (EJECUTIVOS.length === 0) {
+        container.innerHTML = '<p class="no-activity">No hay ejecutivos registrados</p>';
+        return;
+    }
+
+    let html = '<table class="data-table"><thead><tr><th>Ejecutivo(a)</th><th>Teléfono</th><th>Usuario</th><th>Citas</th><th>Reuniones</th><th>Cerrados</th><th>Acciones</th></tr></thead><tbody>';
+
+    EJECUTIVOS.forEach(e => {
+        const ejCitas = citas.filter(c => c.ejecutivo === e.nombre);
         const cerrados = ejCitas.filter(c => c.procesoCerrado === 'si').length;
-        
+
         html += `
             <tr>
-                <td>${nombre}</td>
-                <td>${total}</td>
-                <td>${reuniones}</td>
+                <td>${e.nombre}</td>
+                <td>${e.telefono || 'Sin teléfono'}</td>
+                <td>${e.username || '-'}</td>
+                <td>${ejCitas.length}</td>
+                <td>${ejCitas.filter(c => c.reunion === 'si').length}</td>
                 <td>${cerrados}</td>
+                <td>
+                    <button class="btn-action" onclick="openEjecutivoForm('${e.nombre.replace(/'/g, "\\'")}')">✏️ Editar</button>
+                    <button class="btn-action danger" onclick="eliminarEjecutivo('${e.nombre.replace(/'/g, "\\'")}')">🗑 Eliminar</button>
+                </td>
             </tr>
         `;
     });
-    
+
     html += '</tbody></table>';
     container.innerHTML = html;
+}
+
+function openEjecutivoForm(nombre) {
+    const modal = document.getElementById('ejecutivoModal');
+    if (!modal) return;
+    const form = document.getElementById('ejecutivoForm');
+    const title = document.getElementById('ejecutivoModalTitle');
+
+    form.reset();
+    document.getElementById('ejecutivoId').value = '';
+    document.getElementById('ejPassword').setAttribute('required', 'required');
+
+    if (nombre) {
+        EJECUTIVOS = getStoredEjecutivos();
+        const ejecutivo = EJECUTIVOS.find(e => e.nombre === nombre);
+        if (!ejecutivo) return;
+        title.textContent = 'Editar Ejecutivo';
+        document.getElementById('ejecutivoId').value = ejecutivo.nombre;
+        document.getElementById('ejNombre').value = ejecutivo.nombre;
+        document.getElementById('ejTelefono').value = ejecutivo.telefono || '';
+        document.getElementById('ejUsername').value = ejecutivo.username || '';
+        document.getElementById('ejPassword').removeAttribute('required');
+        document.getElementById('ejPassword').placeholder = 'Dejar vacío para mantener la actual';
+    } else {
+        title.textContent = 'Nuevo Ejecutivo';
+        document.getElementById('ejPassword').placeholder = '';
+    }
+
+    form.onsubmit = function(e) {
+        e.preventDefault();
+        guardarEjecutivo();
+    };
+
+    modal.style.display = 'block';
+}
+
+function guardarEjecutivo() {
+    const originalNombre = document.getElementById('ejecutivoId').value;
+    const nombre = document.getElementById('ejNombre').value.trim().toUpperCase();
+    const telefono = document.getElementById('ejTelefono').value.trim();
+    const username = document.getElementById('ejUsername').value.trim().toLowerCase();
+    const password = document.getElementById('ejPassword').value;
+
+    if (!nombre) {
+        alert('El nombre es obligatorio');
+        return;
+    }
+    if (!username) {
+        alert('El usuario es obligatorio');
+        return;
+    }
+
+    EJECUTIVOS = getStoredEjecutivos();
+
+    // Chequear nombre duplicado
+    if (EJECUTIVOS.some(e => e.nombre === nombre && e.nombre !== originalNombre)) {
+        alert('Ya existe un ejecutivo con ese nombre');
+        return;
+    }
+    // Chequear usuario duplicado
+    if (EJECUTIVOS.some(e => e.username.toLowerCase() === username && e.nombre !== originalNombre)) {
+        alert('El nombre de usuario ya está en uso');
+        return;
+    }
+
+    if (originalNombre) {
+        // EDITAR
+        const idx = EJECUTIVOS.findIndex(e => e.nombre === originalNombre);
+        if (idx === -1) return;
+        EJECUTIVOS[idx].nombre = nombre;
+        EJECUTIVOS[idx].telefono = telefono;
+        EJECUTIVOS[idx].username = username;
+        if (password) {
+            EJECUTIVOS[idx].password = password;
+        }
+        saveEjecutivos(EJECUTIVOS);
+        alert('Ejecutivo actualizado exitosamente');
+    } else {
+        // CREAR
+        if (!password) {
+            alert('La contraseña es obligatoria');
+            return;
+        }
+        EJECUTIVOS.push({ nombre, telefono, username, password });
+        saveEjecutivos(EJECUTIVOS);
+        alert('Ejecutivo creado exitosamente');
+    }
+
+    closeEjecutivoModal();
+    loadExecutivesList();
+    loadDashboard();
+    refrescarSelects();
+}
+
+function eliminarEjecutivo(nombre) {
+    if (!confirm(`¿Está seguro que desea eliminar a ${nombre} y su usuario de acceso?`)) return;
+
+    EJECUTIVOS = getStoredEjecutivos();
+    const tieneCitas = getStoredCitas().some(c => c.ejecutivo === nombre);
+    if (tieneCitas) {
+        alert('No se puede eliminar: el ejecutivo tiene citas asignadas');
+        return;
+    }
+
+    EJECUTIVOS = EJECUTIVOS.filter(e => e.nombre !== nombre);
+    saveEjecutivos(EJECUTIVOS);
+    alert('Ejecutivo eliminado');
+    loadExecutivesList();
+    loadDashboard();
+    refrescarSelects();
+}
+
+function closeEjecutivoModal() {
+    const modal = document.getElementById('ejecutivoModal');
+    if (modal) modal.style.display = 'none';
+}
+
+function refrescarSelects() {
+    EJECUTIVOS = getStoredEjecutivos();
+
+    const selectCita = document.getElementById('ejecutivo');
+    if (selectCita) {
+        selectCita.innerHTML = '<option value="">Seleccione ejecutivo...</option>';
+        EJECUTIVOS.forEach(e => {
+            const opt = document.createElement('option');
+            opt.value = e.nombre;
+            opt.textContent = e.nombre;
+            selectCita.appendChild(opt);
+        });
+    }
+
+    const selectFiltro = document.getElementById('filterEjecutivo');
+    if (selectFiltro) {
+        const actual = selectFiltro.value;
+        selectFiltro.innerHTML = '<option value="">Todos los Ejecutivos</option>';
+        EJECUTIVOS.forEach(e => {
+            const opt = document.createElement('option');
+            opt.value = e.nombre;
+            opt.textContent = e.nombre;
+            selectFiltro.appendChild(opt);
+        });
+        selectFiltro.value = actual;
+    }
+
+    const selectEjecutivoPanel = document.getElementById('selectEjecutivo');
+    if (selectEjecutivoPanel) {
+        selectEjecutivoPanel.innerHTML = '';
+        EJECUTIVOS.forEach(e => {
+            const opt = document.createElement('option');
+            opt.value = e.nombre;
+            opt.textContent = e.nombre;
+            selectEjecutivoPanel.appendChild(opt);
+        });
+        selectEjecutivoPanel.value = myAssignedEjecutivo;
+    }
+}
+
+// ==================== NOTIFICACIÓN WHATSAPP ====================
+function buildWhatsAppUrl(telefono, cita) {
+    const phone = (telefono || '').replace(/[^0-9]/g, '');
+    if (!phone) return null;
+
+    const mensaje = [
+        `Hola ${cita.ejecutivo}, se ha agendado una nueva cita de pensión en el sistema PENSIONES:`,
+        ``,
+        `👤 Cliente: ${cita.nombre}`,
+        `🪪 RUN: ${cita.run}`,
+        `📞 Fono: ${cita.fono}`,
+        `🏦 AFP: ${cita.afp}`,
+        `📋 Pensión: ${cita.tipoPension || 'Sin especificar'}`,
+        `📅 Fecha de la cita: ${formatWhatsAppDate(cita.fechaCita)}`,
+        ``,
+        `Por favor revise los detalles en el sistema.`
+    ].join('\n');
+
+    return `https://wa.me/${phone}?text=${encodeURIComponent(mensaje)}`;
+}
+
+function formatWhatsAppDate(dateStr) {
+    if (!dateStr) return 'Sin fecha';
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return dateStr;
+    return d.toLocaleString('es-CL', {
+        day: '2-digit', month: '2-digit', year: 'numeric',
+        hour: '2-digit', minute: '2-digit'
+    });
 }
 
 // ==================== FORMATO DE FECHAS ====================
@@ -838,6 +1108,8 @@ document.addEventListener('DOMContentLoaded', function() {
     if (reunionCheckbox) {
         reunionCheckbox.addEventListener('change', toggleCierreVisibility);
     }
+
+    refrescarSelects();
 });
 
 // Click en el modal para cerrar
