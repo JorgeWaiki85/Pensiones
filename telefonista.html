@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PENSIONES - Panel Telefonista</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body class="dashboard-body">
+    <nav class="navbar">
+        <div class="nav-brand">
+            <span class="logo-small">P</span>
+            <span>PENSIONES</span>
+        </div>
+        <div class="nav-info">
+            <span class="role-badge telefonista-badge">TELEFONISTA</span>
+            <span class="user-name" id="userName"></span>
+            <button class="btn-logout" onclick="cerrarSesion()">Cerrar Sesión</button>
+        </div>
+    </nav>
+    
+    <div class="container">
+        <div class="sidebar">
+            <ul class="nav-menu">
+                <li class="active" onclick="showSection('nuevaCita')">
+                    <span class="menu-icon">📅</span>
+                    Nueva Cita
+                </li>
+                <li onclick="showSection('calendario')">
+                    <span class="menu-icon">📆</span>
+                    Calendario
+                </li>
+                <li onclick="showSection('listaCitas')">
+                    <span class="menu-icon">📋</span>
+                    Lista de Citas
+                </li>
+            </ul>
+        </div>
+        
+        <main class="main-content">
+            <!-- Nueva Cita -->
+            <section id="nuevaCita" class="section active">
+                <h2>Agendar Nueva Cita</h2>
+                <form id="citaForm" class="cita-form">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="nombre">Nombre *</label>
+                            <input type="text" id="nombre" name="nombre" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="run">RUN *</label>
+                            <input type="text" id="run" name="run" placeholder="12.345.678-9" required>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="fono">Fono *</label>
+                            <input type="tel" id="fono" name="fono" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="correo">Correo</label>
+                            <input type="email" id="correo" name="correo">
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="direccion">Dirección *</label>
+                        <input type="text" id="direccion" name="direccion" required>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="afp">AFP *</label>
+                            <input type="text" id="afp" name="afp" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="tipoPension">Tipo de Pensión *</label>
+                            <select id="tipoPension" name="tipoPension" required>
+                                <option value="">Seleccione...</option>
+                                <option value="Vejez">Vejez</option>
+                                <option value="Invalidez">Invalidez</option>
+                                <option value="Supervivencia">Supervivencia</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="fMaxApelacion">F. Max. Apelación</label>
+                            <input type="date" id="fMaxApelacion" name="fMaxApelacion">
+                        </div>
+                        <div class="form-group">
+                            <label for="fSolPension">F. Sol. Pensión *</label>
+                            <input type="date" id="fSolPension" name="fSolPension" required>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="calificacion">Calificación</label>
+                            <input type="text" id="calificacion" name="calificacion">
+                        </div>
+                        <div class="form-group">
+                            <label for="enfermedad">Enfermedad</label>
+                            <input type="text" id="enfermedad" name="enfermedad">
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="dictamen">Dictamen Nro.</label>
+                        <input type="text" id="dictamen" name="dictamen">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="nota">Nota</label>
+                        <textarea id="nota" name="nota" rows="4" placeholder="Ingrese observaciones adicionales..."></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="ejecutivo">Ejecutivo(a) Asignado *</label>
+                        <select id="ejecutivo" name="ejecutivo" required>
+                            <option value="">Seleccione ejecutivo...</option>
+                            <option value="MARÍA PAZ INOSTROZA">MARÍA PAZ INOSTROZA</option>
+                            <option value="PAULINA INOSTROZA">PAULINA INOSTROZA</option>
+                            <option value="CARLOS VALLADARES">CARLOS VALLADARES</option>
+                            <option value="EVELYN VALLADARES">EVELYN VALLADARES</option>
+                            <option value="MAYROBERT BUSTILLO">MAYROBERT BUSTILLO</option>
+                            <option value="DANIELA PÉREZ">DANIELA PÉREZ</option>
+                            <option value="ANDRES ORREGO">ANDRES ORREGO</option>
+                            <option value="WENDOLIN GONZÁLEZ">WENDOLIN GONZÁLEZ</option>
+                            <option value="RENATA LAGOS">RENATA LAGOS</option>
+                            <option value="PAOLA RAMÍREZ">PAOLA RAMÍREZ</option>
+                            <option value="JOAN SALFATE">JOAN SALFATE</option>
+                            <option value="GHISLAINE CÁCERES">GHISLAINE CÁCERES</option>
+                            <option value="EMILY DÍAZ">EMILY DÍAZ</option>
+                            <option value="ARIANY RIOS">ARIANY RIOS</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="fechaCita">Fecha de Cita *</label>
+                        <input type="datetime-local" id="fechaCita" name="fechaCita" required>
+                    </div>
+                    
+                    <div class="form-actions">
+                        <button type="submit" class="btn-primary">Guardar Cita</button>
+                        <button type="reset" class="btn-secondary">Limpiar</button>
+                    </div>
+                </form>
+            </section>
+            
+            <!-- Calendario -->
+            <section id="calendario" class="section">
+                <h2>Calendario de Citas</h2>
+                <div class="calendar-container">
+                    <div class="calendar-header">
+                        <button onclick="previousMonth()">← Anterior</button>
+                        <h3 id="currentMonth"></h3>
+                        <button onclick="nextMonth()">Siguiente →</button>
+                    </div>
+                    <div class="calendar-grid">
+                        <div class="calendar-day-header">Dom</div>
+                        <div class="calendar-day-header">Lun</div>
+                        <div class="calendar-day-header">Mar</div>
+                        <div class="calendar-day-header">Mié</div>
+                        <div class="calendar-day-header">Jue</div>
+                        <div class="calendar-day-header">Vie</div>
+                        <div class="calendar-day-header">Sáb</div>
+                    </div>
+                    <div class="calendar-days" id="calendarDays"></div>
+                </div>
+                
+                <div class="day-appointments" id="dayAppointments">
+                    <h3>Selecciona una fecha para ver las citas</h3>
+                </div>
+            </section>
+            
+            <!-- Lista de Citas -->
+            <section id="listaCitas" class="section">
+                <h2>Lista de Citas Agendadas</h2>
+                <div class="filters">
+                    <input type="text" id="searchInput" placeholder="Buscar por nombre o RUN..." onkeyup="filterAppointments()">
+                    <select id="filterEjecutivo" onchange="filterAppointments()">
+                        <option value="">Todos los Ejecutivos</option>
+                        <option value="MARÍA PAZ INOSTROZA">MARÍA PAZ INOSTROZA</option>
+                        <option value="PAULINA INOSTROZA">PAULINA INOSTROZA</option>
+                        <option value="CARLOS VALLADARES">CARLOS VALLADARES</option>
+                        <option value="EVELYN VALLADARES">EVELYN VALLADARES</option>
+                        <option value="MAYROBERT BUSTILLO">MAYROBERT BUSTILLO</option>
+                        <option value="DANIELA PÉREZ">DANIELA PÉREZ</option>
+                        <option value="ANDRES ORREGO">ANDRES ORREGO</option>
+                        <option value="WENDOLIN GONZÁLEZ">WENDOLIN GONZÁLEZ</option>
+                        <option value="RENATA LAGOS">RENATA LAGOS</option>
+                        <option value="PAOLA RAMÍREZ">PAOLA RAMÍREZ</option>
+                        <option value="JOAN SALFATE">JOAN SALFATE</option>
+                        <option value="GHISLAINE CÁCERES">GHISLAINE CÁCERES</option>
+                        <option value="EMILY DÍAZ">EMILY DÍAZ</option>
+                        <option value="ARIANY RIOS">ARIANY RIOS</option>
+                    </select>
+                </div>
+                
+                <div class="table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Nombre</th>
+                                <th>RUN</th>
+                                <th>Fono</th>
+                                <th>Ejecutivo</th>
+                                <th>Fecha Cita</th>
+                                <th>Estado</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="citasTableBody">
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </main>
+    </div>
+    
+    <!-- Modal para ver detalles -->
+    <div id="detailModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal()">&times;</span>
+            <h2>Detalles de la Cita</h2>
+            <div id="modalBody" class="modal-body">
+            </div>
+            <div class="modal-actions">
+                <button class="btn-primary" onclick="editCita()">Editar</button>
+                <button class="btn-danger" onclick="deleteCita()">Eliminar</button>
+                <button class="btn-secondary" onclick="closeModal()">Cerrar</button>
+            </div>
+        </div>
+    </div>
+    
+    <script src="app.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            checkAuth('telefonista');
+            loadCalendar();
+            loadCitasTable();
+        });
+    </script>
+</body>
+</html>

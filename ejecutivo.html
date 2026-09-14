@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PENSIONES - Panel Ejecutivo</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body class="dashboard-body">
+    <nav class="navbar">
+        <div class="nav-brand">
+            <span class="logo-small">P</span>
+            <span>PENSIONES</span>
+        </div>
+        <div class="nav-info">
+            <span class="role-badge ejecutivo-badge">EJECUTIVO</span>
+            <span class="user-name" id="userName"></span>
+            <button class="btn-logout" onclick="cerrarSesion()">Cerrar Sesión</button>
+        </div>
+    </nav>
+    
+    <div class="container">
+        <div class="sidebar">
+            <ul class="nav-menu">
+                <li class="active" onclick="showSection('misCitas')">
+                    <span class="menu-icon">📋</span>
+                    Mis Citas
+                </li>
+                <li onclick="showSection('calendario')">
+                    <span class="menu-icon">📆</span>
+                    Calendario
+                </li>
+            </ul>
+        </div>
+        
+        <main class="main-content">
+            <!-- Mis Citas -->
+            <section id="misCitas" class="section active">
+                <h2>Mis Citas Asignadas</h2>
+                
+                <div class="executive-selector">
+                    <label for="selectEjecutivo">Seleccione su nombre:</label>
+                    <select id="selectEjecutivo" onchange="cambiarEjecutivo()">
+                        <option value="MARÍA PAZ INOSTROZA">MARÍA PAZ INOSTROZA</option>
+                        <option value="PAULINA INOSTROZA">PAULINA INOSTROZA</option>
+                        <option value="CARLOS VALLADARES">CARLOS VALLADARES</option>
+                        <option value="EVELYN VALLADARES">EVELYN VALLADARES</option>
+                        <option value="MAYROBERT BUSTILLO">MAYROBERT BUSTILLO</option>
+                        <option value="DANIELA PÉREZ">DANIELA PÉREZ</option>
+                        <option value="ANDRES ORREGO">ANDRES ORREGO</option>
+                        <option value="WENDOLIN GONZÁLEZ">WENDOLIN GONZÁLEZ</option>
+                        <option value="RENATA LAGOS">RENATA LAGOS</option>
+                        <option value="PAOLA RAMÍREZ">PAOLA RAMÍREZ</option>
+                        <option value="JOAN SALFATE">JOAN SALFATE</option>
+                        <option value="GHISLAINE CÁCERES">GHISLAINE CÁCERES</option>
+                        <option value="EMILY DÍAZ">EMILY DÍAZ</option>
+                        <option value="ARIANY RIOS">ARIANY RIOS</option>
+                    </select>
+                </div>
+                
+                <div class="stats-row">
+                    <div class="mini-stat">
+                        <span class="mini-stat-number" id="myTotal"></span>
+                        <span>Total Asignadas</span>
+                    </div>
+                    <div class="mini-stat">
+                        <span class="mini-stat-number" id="myReunion"></span>
+                        <span>Reunión Realizada</span>
+                    </div>
+                    <div class="mini-stat">
+                        <span class="mini-stat-number" id="myCerrados"></span>
+                        <span>Procesos Cerrados</span>
+                    </div>
+                </div>
+                
+                <div class="table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Nombre</th>
+                                <th>RUN</th>
+                                <th>Fono</th>
+                                <th>Dirección</th>
+                                <th>Correo</th>
+                                <th>AFP</th>
+                                <th>Tipo Pensión</th>
+                                <th>F. Cita</th>
+                                <th>Reunión</th>
+                                <th>F. Cierre</th>
+                                <th>Estado</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="misCitasTableBody">
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+            
+            <!-- Calendario -->
+            <section id="calendario" class="section">
+                <h2>Mi Calendario de Citas</h2>
+                <div class="calendar-container">
+                    <div class="calendar-header">
+                        <button onclick="previousMonth()">← Anterior</button>
+                        <h3 id="currentMonth"></h3>
+                        <button onclick="nextMonth()">Siguiente →</button>
+                    </div>
+                    <div class="calendar-grid">
+                        <div class="calendar-day-header">Dom</div>
+                        <div class="calendar-day-header">Lun</div>
+                        <div class="calendar-day-header">Mar</div>
+                        <div class="calendar-day-header">Mié</div>
+                        <div class="calendar-day-header">Jue</div>
+                        <div class="calendar-day-header">Vie</div>
+                        <div class="calendar-day-header">Sáb</div>
+                    </div>
+                    <div class="calendar-days" id="calendarDays"></div>
+                </div>
+                
+                <div class="day-appointments" id="dayAppointments">
+                    <h3>Selecciona una fecha para ver las citas</h3>
+                </div>
+            </section>
+        </main>
+    </div>
+    
+    <!-- Modal para ver detalles y gestionar reunión/cierre -->
+    <div id="detailModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal()">&times;</span>
+            <h2>Gestión de Cita</h2>
+            <div id="modalBody" class="modal-body">
+            </div>
+            
+            <div class="executive-actions">
+                <h3>Registro de Gestión</h3>
+                <div class="check-option">
+                    <input type="checkbox" id="reunionRealizada">
+                    <label for="reunionRealizada">Reunión Realizada con el Pensionado</label>
+                </div>
+                
+                <div class="check-option" id="cierreContainer" style="display:none;">
+                    <input type="checkbox" id="procesoCerrado">
+                    <label for="procesoCerrado">Proceso de Pensión Concretado</label>
+                </div>
+                
+                <div class="form-group" id="fechaCierreContainer" style="display:none;">
+                    <label for="fechaCierre">Fecha de Cierre del Proceso</label>
+                    <input type="date" id="fechaCierre">
+                </div>
+                
+                <div class="modal-actions">
+                    <button class="btn-primary" onclick="guardarGestion()">Guardar Gestión</button>
+                    <button class="btn-secondary" onclick="closeModal()">Cerrar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="app.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            checkAuth('ejecutivo');
+            loadMisCitas();
+            loadCalendar();
+        });
+    </script>
+</body>
+</html>
