@@ -358,6 +358,16 @@ function verDetalles(id) {
         <div class="detail-executive">
             <strong>Reunión Realizada:</strong> ${cita.reunion === 'si' ? '✅ Sí' : '❌ No'}
             <br>
+            <strong>Dictamen Ejecutoriado:</strong> ${cita.dictamenEjecutoriado === 'si' ? '✅ Sí' : '❌ No'}
+            <br>
+            <strong>Certificado de Saldo:</strong> ${cita.certificadoSaldo === 'si' ? '✅ Sí' : '❌ No'}
+            <br>
+            <strong>Solicitud de SCOMP:</strong> ${cita.solicitudScomp === 'si' ? '✅ Sí' : '❌ No'}
+            <br>
+            <strong>Elección de Modalidad:</strong> ${cita.eleccionModalidad === 'si' ? '✅ Sí' : '❌ No'}
+            <br>
+            <strong>Fidelización:</strong> ${cita.fidelizacion === 'si' ? '✅ Sí' : '❌ No'}
+            <br>
             <strong>Proceso Concretado:</strong> ${cita.procesoCerrado === 'si' ? '✅ Sí' : '❌ No'}
             ${cita.fechaCierre ? `<br><strong>Fecha de Cierre:</strong> ${formatDate(cita.fechaCierre)}` : ''}
         </div>
@@ -374,6 +384,11 @@ function verDetalles(id) {
         const fechaCierre = document.getElementById('fechaCierre');
         
         reunionCheckbox.checked = cita.reunion === 'si';
+        document.getElementById('dictamenEjecutoriado').checked = cita.dictamenEjecutoriado === 'si';
+        document.getElementById('certificadoSaldo').checked = cita.certificadoSaldo === 'si';
+        document.getElementById('solicitudScomp').checked = cita.solicitudScomp === 'si';
+        document.getElementById('eleccionModalidad').checked = cita.eleccionModalidad === 'si';
+        document.getElementById('fidelizacion').checked = cita.fidelizacion === 'si';
         cierreCheckbox.checked = cita.procesoCerrado === 'si';
         fechaCierre.value = cita.fechaCierre || '';
         
@@ -395,11 +410,12 @@ function guardarGestion() {
     const cierreCheckbox = document.getElementById('procesoCerrado');
     const fechaCierreInput = document.getElementById('fechaCierre');
     
-    if (reunionCheckbox && reunionCheckbox.checked) {
-        citas[idx].reunion = 'si';
-    } else {
-        citas[idx].reunion = 'no';
-    }
+    citas[idx].reunion = reunionCheckbox && reunionCheckbox.checked ? 'si' : 'no';
+    citas[idx].dictamenEjecutoriado = document.getElementById('dictamenEjecutoriado').checked ? 'si' : 'no';
+    citas[idx].certificadoSaldo = document.getElementById('certificadoSaldo').checked ? 'si' : 'no';
+    citas[idx].solicitudScomp = document.getElementById('solicitudScomp').checked ? 'si' : 'no';
+    citas[idx].eleccionModalidad = document.getElementById('eleccionModalidad').checked ? 'si' : 'no';
+    citas[idx].fidelizacion = document.getElementById('fidelizacion').checked ? 'si' : 'no';
     
     if (cierreCheckbox && cierreCheckbox.checked) {
         citas[idx].procesoCerrado = 'si';
@@ -705,6 +721,11 @@ function toggleCierreVisibility() {
         cierrContainer.style.display = 'none';
         fechaCierreContainer.style.display = 'none';
         document.getElementById('procesoCerrado').checked = false;
+        document.getElementById('dictamenEjecutoriado').checked = false;
+        document.getElementById('certificadoSaldo').checked = false;
+        document.getElementById('solicitudScomp').checked = false;
+        document.getElementById('eleccionModalidad').checked = false;
+        document.getElementById('fidelizacion').checked = false;
     }
 }
 
