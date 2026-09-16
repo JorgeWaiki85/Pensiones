@@ -653,10 +653,7 @@ function filterAppointments() {
     let filtered = [...citas];
     
     if (searchValue) {
-        filtered = filtered.filter(c => 
-            c.nombre.toLowerCase().includes(searchValue) || 
-            c.run.toLowerCase().includes(searchValue)
-        );
+        filtered = filtered.filter(c => citasSearchText(c).includes(searchValue));
     }
     
     if (ejecutivoValue) {
@@ -716,6 +713,18 @@ function filterAppointments() {
 }
 
 // ==================== MIS CITAS (EJECUTIVO) ====================
+function citasSearchText(c) {
+    return [
+        c.nombre || '',
+        c.run || '',
+        c.fechaCita || '',
+        formatDateTime(c.fechaCita),
+        c.fechaCierre || '',
+        formatDate(c.fechaCierre),
+        c.dictamen || ''
+    ].join(' ').toLowerCase();
+}
+
 let myAssignedEjecutivo = localStorage.getItem('pensiones_ejecutivo') || 'MARÍA PAZ INOSTROZA';
 
 function cambiarEjecutivo() {
