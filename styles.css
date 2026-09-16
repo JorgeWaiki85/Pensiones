@@ -595,6 +595,36 @@ body {
     padding: 30px !important;
 }
 
+.sin-asignar {
+    color: #e67e22;
+    font-weight: 600;
+    font-size: 11px;
+    letter-spacing: 0.5px;
+}
+
+.asignar-select {
+    padding: 4px 6px;
+    border: 1px solid #d5d8dc;
+    border-radius: 4px;
+    font-size: 12px;
+    margin-right: 4px;
+    max-width: 140px;
+}
+
+.form-note {
+    padding: 10px 12px;
+    background: #fef9e7;
+    border-left: 4px solid #f1c40f;
+    border-radius: 4px;
+    color: #7d6608;
+    font-size: 13px;
+}
+
+.section-desc {
+    color: var(--gray);
+    margin-bottom: 15px;
+}
+
 /* ==================== FILTROS ==================== */
 .filters {
     display: flex;

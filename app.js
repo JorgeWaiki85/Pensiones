@@ -38,6 +38,7 @@ function getStoredEjecutivos() {
         stored = EJECUTIVOS_DEFAULT.map(e => ({
             nombre: e.nombre,
             telefono: e.telefono,
+            correo: e.correo || '',
             username: normalizeUsername(e.nombre),
             password: 'ejec123'
         }));
@@ -66,6 +67,30 @@ function getUsers() {
 }
 
 let EJECUTIVOS = getStoredEjecutivos();
+
+// ==================== CONFIGURACIÓN DE NOTIFICACIONES DEL ADMINISTRADOR ====================
+const CONFIG_DEFAULT = {
+    admin_correo: 'jorge.huaiquicheo86@gmail.com',
+    admin_telefono: '+56971779459'
+};
+
+function getConfig() {
+    let cfg;
+    try {
+        cfg = JSON.parse(localStorage.getItem('pensiones_config'));
+    } catch (e) {
+        cfg = null;
+    }
+    if (!cfg || !cfg.admin_correo || !cfg.admin_telefono) {
+        cfg = Object.assign({}, CONFIG_DEFAULT, cfg || {});
+        localStorage.setItem('pensiones_config', JSON.stringify(cfg));
+    }
+    return cfg;
+}
+
+function saveConfig(cfg) {
+    localStorage.setItem('pensiones_config', JSON.stringify(cfg));
+}
 
 // ==================== VARIABLES GLOBALES ====================
 let citas = [];
@@ -188,7 +213,8 @@ function showSection(sectionId) {
         'Calendario': 'calendario',
         'Lista de Citas': 'listaCitas',
         'Mis Citas': 'misCitas',
-        'Gestionar Ejecutivos': 'gestionarEjecutivos'
+        'Gestionar Ejecutivos': 'gestionarEjecutivos',
+        'Configuración': 'configuracion'
     };
     
     document.querySelectorAll('.nav-menu li').forEach(li => {
@@ -213,6 +239,9 @@ function showSection(sectionId) {
     }
     if (sectionId === 'dashboard') {
         loadDashboard();
+    }
+    if (sectionId === 'configuracion') {
+        loadConfiguracion();
     }
 }
 
@@ -241,7 +270,7 @@ function loadDashboard() {
         sorted.forEach(c => {
             html += `<li>
                 <span class="activity-date">${formatDateShort(c.creadaEn)}</span>
-                <span class="activity-text"><strong>${c.nombre}</strong> - ${c.ejecutivo}</span>
+                <span class="activity-text"><strong>${c.nombre}</strong> - ${c.ejecutivo || 'SIN ASIGNAR'}</span>
                 <span class="activity-status ${estadoClass(c)}">${estadoLabel(c)}</span>
             </li>`;
         });
@@ -275,7 +304,7 @@ function guardarCita(event) {
         enfermedad: document.getElementById('enfermedad').value,
         nota: document.getElementById('nota').value,
         dictamen: document.getElementById('dictamen').value,
-        ejecutivo: document.getElementById('ejecutivo').value,
+        ejecutivo: document.getElementById('ejecutivo') ? document.getElementById('ejecutivo').value : '',
         fechaCita: document.getElementById('fechaCita').value,
         reunion: 'no',
         procesoCerrado: 'no',
@@ -288,6 +317,16 @@ function guardarCita(event) {
     setCitas(citas);
     
     alert('Cita agendada exitosamente para ' + cita.nombre);
+    
+    // La telefonista no asigna ejecutivo: se notifica al administrador
+    if (currentRole === 'telefonista') {
+        notifyAdmin(cita);
+        form.reset();
+        if (document.getElementById('calendario')) loadCalendar();
+        if (document.getElementById('listaCitas')) loadCitasTable();
+        if (document.getElementById('dashboard')) loadDashboard();
+        return;
+    }
     
     // Notificación WhatsApp al ejecutivo asignado
     const ejecutivoAsignado = EJECUTIVOS.find(e => e.nombre === cita.ejecutivo);
@@ -349,7 +388,7 @@ function verDetalles(id) {
             <div class="detail-item"><strong>Calificación:</strong> ${cita.calificacion || '-'}</div>
             <div class="detail-item"><strong>Enfermedad:</strong> ${cita.enfermedad || '-'}</div>
             <div class="detail-item"><strong>Dictamen Nro.:</strong> ${cita.dictamen || '-'}</div>
-            <div class="detail-item"><strong>Ejecutivo(a):</strong> ${cita.ejecutivo}</div>
+            <div class="detail-item"><strong>Ejecutivo(a):</strong> ${cita.ejecutivo || 'SIN ASIGNAR'}</div>
             <div class="detail-item"><strong>Fecha de Cita:</strong> ${formatDateTime(cita.fechaCita)}</div>
         </div>
         <div class="detail-note">
@@ -460,7 +499,8 @@ function editCita() {
     document.getElementById('enfermedad').value = cita.enfermedad || '';
     document.getElementById('nota').value = cita.nota || '';
     document.getElementById('dictamen').value = cita.dictamen || '';
-    document.getElementById('ejecutivo').value = cita.ejecutivo || '';
+    const selEjec = document.getElementById('ejecutivo');
+    if (selEjec) selEjec.value = cita.ejecutivo || '';
     document.getElementById('fechaCita').value = cita.fechaCita || '';
     
     editingCitaId = cita.id;
@@ -495,7 +535,10 @@ function actualizarCita(id) {
     citas[idx].enfermedad = document.getElementById('enfermedad').value;
     citas[idx].nota = document.getElementById('nota').value;
     citas[idx].dictamen = document.getElementById('dictamen').value;
-    citas[idx].ejecutivo = document.getElementById('ejecutivo').value;
+    const selEjec = document.getElementById('ejecutivo');
+    citas[idx].ejecutivo = currentRole === 'telefonista'
+        ? citas[idx].ejecutivo
+        : (selEjec ? selEjec.value : citas[idx].ejecutivo);
     citas[idx].fechaCita = document.getElementById('fechaCita').value;
     
     setCitas(citas);
@@ -533,6 +576,29 @@ function deleteCita() {
     }
 }
 
+// ==================== ASIGNAR EJECUTIVO A CITA (ADMIN) ====================
+function asignarEjecutivo(citaId) {
+    const sel = document.getElementById('asignarSel_' + citaId);
+    const ejecutivoNombre = sel ? sel.value : '';
+    if (!ejecutivoNombre) {
+        alert('Seleccione un ejecutivo para asignar');
+        return;
+    }
+
+    citas = getStoredCitas();
+    const idx = citas.findIndex(c => c.id === citaId);
+    if (idx === -1) return;
+
+    citas[idx].ejecutivo = ejecutivoNombre;
+    setCitas(citas);
+
+    alert('Ejecutivo asignado a la cita');
+    loadCitasTable();
+    loadCalendar();
+    loadMisCitas();
+    if (document.getElementById('dashboard')) loadDashboard();
+}
+
 // ==================== TABLA DE CITAS (ADMIN / TELEFONISTA) ====================
 function loadCitasTable() {
     citas = getStoredCitas();
@@ -548,17 +614,29 @@ function loadCitasTable() {
     
     let html = '';
     sorted.forEach(c => {
+        const acciones = [];
+
+        if (currentRole === 'admin' && !c.ejecutivo) {
+            acciones.push(`
+                <select id="asignarSel_${c.id}" class="asignar-select">
+                    <option value="">Asignar...</option>
+                    ${EJECUTIVOS.map(e => `<option value="${e.nombre}">${e.nombre}</option>`).join('')}
+                </select>
+                <button class="btn-action" onclick="asignarEjecutivo('${c.id}')">✔ Asignar</button>
+            `);
+        }
+
+        acciones.push(`<button class="btn-action" onclick="verDetalles('${c.id}')">👁 Ver</button>`);
+
         html += `
             <tr>
                 <td>${c.nombre}</td>
                 <td>${c.run}</td>
                 <td>${c.fono}</td>
-                <td>${c.ejecutivo}</td>
+                <td>${c.ejecutivo || '<span class="sin-asignar">SIN ASIGNAR</span>'}</td>
                 <td>${formatDateTime(c.fechaCita)}</td>
                 <td><span class="status-badge ${estadoClass(c)}">${estadoLabel(c)}</span></td>
-                <td>
-                    <button class="btn-action" onclick="verDetalles('${c.id}')">👁 Ver</button>
-                </td>
+                <td>${acciones.join(' ')}</td>
             </tr>
         `;
     });
@@ -582,7 +660,11 @@ function filterAppointments() {
     }
     
     if (ejecutivoValue) {
-        filtered = filtered.filter(c => c.ejecutivo === ejecutivoValue);
+        if (ejecutivoValue === 'sinAsignar') {
+            filtered = filtered.filter(c => !c.ejecutivo);
+        } else {
+            filtered = filtered.filter(c => c.ejecutivo === ejecutivoValue);
+        }
     }
     
     if (estadoValue) {
@@ -603,17 +685,29 @@ function filterAppointments() {
     
     let html = '';
     filtered.forEach(c => {
+        const acciones = [];
+
+        if (currentRole === 'admin' && !c.ejecutivo) {
+            acciones.push(`
+                <select id="asignarSel_${c.id}" class="asignar-select">
+                    <option value="">Asignar...</option>
+                    ${EJECUTIVOS.map(e => `<option value="${e.nombre}">${e.nombre}</option>`).join('')}
+                </select>
+                <button class="btn-action" onclick="asignarEjecutivo('${c.id}')">✔ Asignar</button>
+            `);
+        }
+
+        acciones.push(`<button class="btn-action" onclick="verDetalles('${c.id}')">👁 Ver</button>`);
+
         html += `
             <tr>
                 <td>${c.nombre}</td>
                 <td>${c.run}</td>
                 <td>${c.fono}</td>
-                <td>${c.ejecutivo}</td>
+                <td>${c.ejecutivo || '<span class="sin-asignar">SIN ASIGNAR</span>'}</td>
                 <td>${formatDateTime(c.fechaCita)}</td>
                 <td><span class="status-badge ${estadoClass(c)}">${estadoLabel(c)}</span></td>
-                <td>
-                    <button class="btn-action" onclick="verDetalles('${c.id}')">👁 Ver</button>
-                </td>
+                <td>${acciones.join(' ')}</td>
             </tr>
         `;
     });
@@ -811,7 +905,7 @@ function showDayCitas(dateStr) {
             <li class="day-cita-item">
                 <span class="cita-hora">${hora}</span>
                 <span class="cita-nombre">${c.nombre}</span>
-                <span class="cita-ejecutivo">${c.ejecutivo}</span>
+                <span class="cita-ejecutivo">${c.ejecutivo || 'SIN ASIGNAR'}</span>
                 <span class="status-badge ${estadoClass(c)}">${estadoLabel(c)}</span>
                 <button class="btn-action" onclick="verDetalles('${c.id}')">👁 Ver</button>
             </li>
@@ -853,7 +947,7 @@ function loadExecutivesList() {
         return;
     }
 
-    let html = '<table class="data-table"><thead><tr><th>Ejecutivo(a)</th><th>Teléfono</th><th>Usuario</th><th>Citas</th><th>Reuniones</th><th>Cerrados</th><th>Acciones</th></tr></thead><tbody>';
+    let html = '<table class="data-table"><thead><tr><th>Ejecutivo(a)</th><th>Teléfono</th><th>Correo</th><th>Usuario</th><th>Citas</th><th>Reuniones</th><th>Cerrados</th><th>Acciones</th></tr></thead><tbody>';
 
     EJECUTIVOS.forEach(e => {
         const ejCitas = citas.filter(c => c.ejecutivo === e.nombre);
@@ -863,6 +957,7 @@ function loadExecutivesList() {
             <tr>
                 <td>${e.nombre}</td>
                 <td>${e.telefono || 'Sin teléfono'}</td>
+                <td>${e.correo || '-'}</td>
                 <td>${e.username || '-'}</td>
                 <td>${ejCitas.length}</td>
                 <td>${ejCitas.filter(c => c.reunion === 'si').length}</td>
@@ -897,6 +992,7 @@ function openEjecutivoForm(nombre) {
         document.getElementById('ejecutivoId').value = ejecutivo.nombre;
         document.getElementById('ejNombre').value = ejecutivo.nombre;
         document.getElementById('ejTelefono').value = ejecutivo.telefono || '';
+        document.getElementById('ejCorreo').value = ejecutivo.correo || '';
         document.getElementById('ejUsername').value = ejecutivo.username || '';
         document.getElementById('ejPassword').removeAttribute('required');
         document.getElementById('ejPassword').placeholder = 'Dejar vacío para mantener la actual';
@@ -917,6 +1013,7 @@ function guardarEjecutivo() {
     const originalNombre = document.getElementById('ejecutivoId').value;
     const nombre = document.getElementById('ejNombre').value.trim().toUpperCase();
     const telefono = document.getElementById('ejTelefono').value.trim();
+    const correo = document.getElementById('ejCorreo').value.trim();
     const username = document.getElementById('ejUsername').value.trim().toLowerCase();
     const password = document.getElementById('ejPassword').value;
 
@@ -948,6 +1045,7 @@ function guardarEjecutivo() {
         if (idx === -1) return;
         EJECUTIVOS[idx].nombre = nombre;
         EJECUTIVOS[idx].telefono = telefono;
+        EJECUTIVOS[idx].correo = correo;
         EJECUTIVOS[idx].username = username;
         if (password) {
             EJECUTIVOS[idx].password = password;
@@ -960,7 +1058,7 @@ function guardarEjecutivo() {
             alert('La contraseña es obligatoria');
             return;
         }
-        EJECUTIVOS.push({ nombre, telefono, username, password });
+        EJECUTIVOS.push({ nombre, telefono, correo, username, password });
         saveEjecutivos(EJECUTIVOS);
         alert('Ejecutivo creado exitosamente');
     }
@@ -994,6 +1092,23 @@ function closeEjecutivoModal() {
     if (modal) modal.style.display = 'none';
 }
 
+// ==================== CONFIGURACIÓN NOTIFICACIONES (ADMIN) ====================
+function loadConfiguracion() {
+    const cfg = getConfig();
+    if (document.getElementById('adminCorreo')) document.getElementById('adminCorreo').value = cfg.admin_correo || '';
+    if (document.getElementById('adminTelefono')) document.getElementById('adminTelefono').value = cfg.admin_telefono || '';
+}
+
+function guardarConfiguracion(e) {
+    e.preventDefault();
+    const cfg = {
+        admin_correo: document.getElementById('adminCorreo').value.trim(),
+        admin_telefono: document.getElementById('adminTelefono').value.trim()
+    };
+    saveConfig(cfg);
+    alert('Configuración de notificaciones guardada');
+}
+
 function refrescarSelects() {
     EJECUTIVOS = getStoredEjecutivos();
 
@@ -1018,6 +1133,10 @@ function refrescarSelects() {
             opt.textContent = e.nombre;
             selectFiltro.appendChild(opt);
         });
+        const optSin = document.createElement('option');
+        optSin.value = 'sinAsignar';
+        optSin.textContent = 'Sin Asignar';
+        selectFiltro.appendChild(optSin);
         selectFiltro.value = actual;
     }
 
@@ -1063,6 +1182,34 @@ function formatWhatsAppDate(dateStr) {
         day: '2-digit', month: '2-digit', year: 'numeric',
         hour: '2-digit', minute: '2-digit'
     });
+}
+
+// ==================== NOTIFICACIÓN AL ADMINISTRADOR ====================
+function notifyAdmin(cita) {
+    const cfg = getConfig();
+    const mensaje = [
+        `Se ha registrado una nueva cita de pensión (pendiente de asignación de ejecutivo):`,
+        ``,
+        `👤 Cliente: ${cita.nombre}`,
+        `🪪 RUN: ${cita.run}`,
+        `📞 Fono: ${cita.fono}`,
+        `📧 Correo: ${cita.correo || '-'}`,
+        `🏦 AFP: ${cita.afp}`,
+        `📋 Pensión: ${cita.tipoPension || 'Sin especificar'}`,
+        `📅 Fecha de la cita: ${formatWhatsAppDate(cita.fechaCita)}`,
+        ``,
+        `Por favor asigne un ejecutivo(a) en el sistema.`
+    ].join('\n');
+
+    const telefono = (cfg.admin_telefono || '').replace(/[^0-9]/g, '');
+    if (telefono && confirm('¿Abrir WhatsApp para notificar al Administrador sobre esta cita?')) {
+        window.open(`https://wa.me/${telefono}?text=${encodeURIComponent(mensaje)}`, '_blank');
+    }
+
+    if (cfg.admin_correo && confirm('¿Abrir correo para notificar al Administrador sobre esta cita?')) {
+        const subject = encodeURIComponent('Nueva cita registrada - PENSIONES');
+        window.open(`mailto:${cfg.admin_correo}?subject=${subject}&body=${encodeURIComponent(mensaje)}`, '_blank');
+    }
 }
 
 // ==================== FORMATO DE FECHAS ====================
@@ -1128,6 +1275,11 @@ document.addEventListener('DOMContentLoaded', function() {
     const reunionCheckbox = document.getElementById('reunionRealizada');
     if (reunionCheckbox) {
         reunionCheckbox.addEventListener('change', toggleCierreVisibility);
+    }
+
+    const configForm = document.getElementById('configForm');
+    if (configForm) {
+        configForm.addEventListener('submit', guardarConfiguracion);
     }
 
     refrescarSelects();

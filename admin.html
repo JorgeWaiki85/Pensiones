@@ -42,6 +42,10 @@
                     <span class="menu-icon">👥</span>
                     Gestionar Ejecutivos
                 </li>
+                <li onclick="showSection('configuracion')">
+                    <span class="menu-icon">⚙️</span>
+                    Configuración
+                </li>
             </ul>
         </div>
         
@@ -273,6 +277,28 @@
                 <div class="executives-list" id="executivesList">
                 </div>
             </section>
+            
+            <!-- Configuración -->
+            <section id="configuracion" class="section">
+                <h2>Configuración de Notificaciones</h2>
+                <p class="section-desc">Datos de contacto del administrador para recibir avisos de nuevas citas registradas por la telefonista.</p>
+                <form id="configForm" class="cita-form">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="adminCorreo">Correo del Administrador</label>
+                            <input type="email" id="adminCorreo" placeholder="admin@correo.cl">
+                        </div>
+                        <div class="form-group">
+                            <label for="adminTelefono">WhatsApp del Administrador</label>
+                            <input type="tel" id="adminTelefono" placeholder="+56912345678">
+                            <small class="form-hint">Formato internacional. Ej: +56912345678</small>
+                        </div>
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" class="btn-primary">Guardar Configuración</button>
+                    </div>
+                </form>
+            </section>
         </main>
     </div>
     
@@ -291,6 +317,10 @@
                     <label for="ejTelefono">Teléfono (WhatsApp con +56) *</label>
                     <input type="tel" id="ejTelefono" placeholder="+56912345678" required>
                     <small class="form-hint">Formato internacional. Ej: +56912345678</small>
+                </div>
+                <div class="form-group">
+                    <label for="ejCorreo">Correo</label>
+                    <input type="email" id="ejCorreo" placeholder="ejecutivo@correo.cl">
                 </div>
                 <div class="form-group">
                     <label for="ejUsername">Usuario para entrar al sistema *</label>
