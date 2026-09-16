@@ -725,28 +725,12 @@ function citasSearchText(c) {
     ].join(' ').toLowerCase();
 }
 
-let myAssignedEjecutivo = localStorage.getItem('pensiones_ejecutivo') || 'MARÍA PAZ INOSTROZA';
-
-function cambiarEjecutivo() {
-    const selectEl = document.getElementById('selectEjecutivo');
-    if (selectEl) {
-        myAssignedEjecutivo = selectEl.value;
-        localStorage.setItem('pensiones_ejecutivo', myAssignedEjecutivo);
-        loadMisCitas();
-        loadCalendar();
-    }
-}
+let myAssignedEjecutivo = localStorage.getItem('pensiones_ejecutivo') || '';
 
 function loadMisCitas() {
     citas = getStoredCitas();
     const tbody = document.getElementById('misCitasTableBody');
     if (!tbody) return;
-    
-    // Sincronizar selector
-    const selectEl = document.getElementById('selectEjecutivo');
-    if (selectEl && selectEl.value !== myAssignedEjecutivo) {
-        selectEl.value = myAssignedEjecutivo;
-    }
     
     const myCitas = citas.filter(c => c.ejecutivo === myAssignedEjecutivo);
     
@@ -1147,18 +1131,6 @@ function refrescarSelects() {
         optSin.textContent = 'Sin Asignar';
         selectFiltro.appendChild(optSin);
         selectFiltro.value = actual;
-    }
-
-    const selectEjecutivoPanel = document.getElementById('selectEjecutivo');
-    if (selectEjecutivoPanel) {
-        selectEjecutivoPanel.innerHTML = '';
-        EJECUTIVOS.forEach(e => {
-            const opt = document.createElement('option');
-            opt.value = e.nombre;
-            opt.textContent = e.nombre;
-            selectEjecutivoPanel.appendChild(opt);
-        });
-        selectEjecutivoPanel.value = myAssignedEjecutivo;
     }
 }
 
